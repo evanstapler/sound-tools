@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Generator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the range slider thumb */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Webkit (Chrome, Safari) */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #22d3ee; /* cyan-400 */
+            border-radius: 50%;
+            cursor: pointer;
+            margin-top: -6px; /* Center thumb */
+        }
+
+        /* Firefox */
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #22d3ee; /* cyan-400 */
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        /* Remove number input arrows */
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        /* Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-gray-800 p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-md space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-cyan-400">Web Function Generator</h1>
+            <p class="text-sm text-gray-400 mt-1">Generate audio waveforms in your browser.</p>
+        </div>
+
+        <!-- Play/Stop Controls -->
+        <div class="space-y-4">
+            <button id="playBtn" class="w-full p-3 text-lg font-semibold rounded-lg transition-all shadow-lg bg-green-600 hover:bg-green-500 text-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">
+                Play
+            </button>
+            <button id="stopBtn" class="w-full p-3 text-lg font-semibold rounded-lg transition-all shadow-lg bg-red-600 hover:bg-red-500 text-white focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75" style="display: none;">
+                Stop
+            </button>
+        </div>
+
+        <!-- Frequency Controls -->
+        <div class="space-y-4">
+            <label id="freqLabel" for="freqSlider" class="flex justify-between text-sm font-medium text-gray-300">
+                <span>Frequency</span>
+                <span>440 Hz</span>
+            </label>
+            <input id="freqSlider" type="range" min="20" max="44000" value="440" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+            <input id="freqInput" type="number" min="20" max="44000" value="440" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-cyan-400">
+        </div>
+
+        <!-- Waveform Controls -->
+        <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-300">Waveform</label>
+            <div id="waveBtns" class="grid grid-cols-4 gap-2">
+                <button class="wave-btn p-2 bg-cyan-500 text-white font-bold rounded-md text-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all" data-wave="sine">Sine</button>
+                <button class="wave-btn p-2 bg-gray-700 rounded-md text-gray-300 text-sm font-medium hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all" data-wave="square">Square</button>
+                <button class="wave-btn p-2 bg-gray-700 rounded-md text-gray-300 text-sm font-medium hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all" data-wave="sawtooth">Sawtooth</button>
+                <button class="wave-btn p-2 bg-gray-700 rounded-md text-gray-300 text-sm font-medium hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all" data-wave="triangle">Triangle</button>
+            </div>
+        </div>
+
+        <!-- Volume Controls -->
+        <div class="space-y-4">
+            <label id="volumeLabel" for="volumeSlider" class="flex justify-between text-sm font-medium text-gray-300">
+                <span>Volume</span>
+                <span>50%</span>
+            </label>
+            <input id="volumeSlider" type="range" min="0" max="100" value="50" step="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Info Box -->
+        <div id="infoBox" class="text-xs text-center text-gray-500 bg-gray-900 p-3 rounded-md">
+            Click Play to start the AudioContext.
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Global audio variables
+            let audioContext = null;
+            let oscillator = null;
+            let gainNode = null;
+            let isPlaying = false;
+            let currentWave = 'sine';
+            let currentFreq = 440;
+            let currentVolume = 0.5; // Default volume (50%)
+            const REQUESTED_MAX_FREQ = 44000;
+
+            // DOM Elements
+            const playBtn = document.getElementById('playBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const freqSlider = document.getElementById('freqSlider');
+            const freqInput = document.getElementById('freqInput');
+            const freqLabel = document.getElementById('freqLabel');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const volumeLabel = document.getElementById('volumeLabel');
+            const waveBtns = document.querySelectorAll('.wave-btn');
+            const infoBox = document.getElementById('infoBox');
+
+            // --- Audio Initialization ---
+            
+            function initAudio() {
+                try {
+                    // Try to create a high sample rate context to support 44kHz
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 96000 });
+                } catch (e) {
+                    // Fallback to default if 96kHz is not supported
+                    console.warn("96kHz AudioContext failed, falling back to default.", e);
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                const actualMaxFreq = audioContext.sampleRate / 2;
+                const finalMax = Math.min(REQUESTED_MAX_FREQ, actualMaxFreq);
+
+                // Update UI controls to reflect the *actual* hardware limits
+                freqSlider.max = finalMax;
+                freqInput.max = finalMax;
+                
+                if (finalMax < REQUESTED_MAX_FREQ) {
+                    freqInput.value = finalMax;
+                    freqSlider.value = finalMax;
+                    currentFreq = finalMax;
+                    updateFrequencyDisplay(finalMax);
+                    infoBox.innerHTML = `<strong>Note:</strong> Your hardware's max frequency is <strong>${actualMaxFreq.toFixed(0)} Hz</strong>.<br>Controls have been capped to this limit.`;
+                } else {
+                    infoBox.innerHTML = `AudioContext Sample Rate: <strong>${audioContext.sampleRate} Hz</strong>.<br>Max Frequency: <strong>${actualMaxFreq.toFixed(0)} Hz</strong>.`;
+                }
+            }
+
+            // --- Audio Controls ---
+
+            function startAudio() {
+                if (isPlaying) return;
+                
+                // Initialize audio on first play click (browsers require user interaction)
+                if (!audioContext) {
+                    initAudio();
+                }
+
+                // Resume context if it was suspended
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                // Create Oscillator and Gain nodes
+                gainNode = audioContext.createGain();
+                oscillator = audioContext.createOscillator();
+
+                // Configure oscillator
+                oscillator.type = currentWave;
+                oscillator.frequency.setValueAtTime(currentFreq, audioContext.currentTime);
+
+                // Connect nodes: Oscillator -> Gain -> Destination (speakers)
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Start silently and fade in quickly to prevent "click"
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(currentVolume, audioContext.currentTime + 0.01); // Use currentVolume
+
+                oscillator.start();
+                isPlaying = true;
+
+                // Update UI
+                playBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+            }
+
+            function stopAudio() {
+                if (!isPlaying || !oscillator || !gainNode) return;
+
+                // Fade out quickly to prevent "click"
+                gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.01);
+
+                // Stop and disconnect after fade out
+                oscillator.stop(audioContext.currentTime + 0.01);
+                oscillator.disconnect();
+                gainNode.disconnect();
+
+                oscillator = null;
+                gainNode = null;
+                isPlaying = false;
+
+                // Update UI
+                playBtn.style.display = 'block';
+                stopBtn.style.display = 'none';
+            }
+
+            // --- Event Handlers ---
+
+            function handleFrequencyChange(e) {
+                const newFreq = parseFloat(e.target.value);
+                currentFreq = newFreq;
+                
+                // Update frequency if oscillator is running
+                if (isPlaying && oscillator) {
+                    oscillator.frequency.setValueAtTime(newFreq, audioContext.currentTime);
+                }
+                
+                // Sync both inputs and the label
+                updateFrequencyDisplay(newFreq);
+            }
+
+            function updateFrequencyDisplay(freq) {
+                freqSlider.value = freq;
+                freqInput.value = freq;
+                freqLabel.children[1].textContent = `${freq.toFixed(0)} Hz`;
+            }
+
+            function handleVolumeChange(e) {
+                const newVolumeValue = parseInt(e.target.value, 10);
+                currentVolume = newVolumeValue / 100; // Convert 0-100 scale to 0-1 scale
+
+                // Update volume if oscillator is running
+                if (isPlaying && gainNode) {
+                    gainNode.gain.setValueAtTime(currentVolume, audioContext.currentTime);
+                }
+
+                // Update label
+                volumeLabel.children[1].textContent = `${newVolumeValue}%`;
+            }
+
+            function handleWaveChange(e) {
+                currentWave = e.target.dataset.wave;
+                
+                // Update oscillator type if it's running
+                if (isPlaying && oscillator) {
+                    oscillator.type = currentWave;
+                }
+
+                // Update active button style
+                waveBtns.forEach(btn => {
+                    btn.classList.remove('bg-cyan-500', 'text-white', 'font-bold');
+                    btn.classList.add('bg-gray-700', 'text-gray-300', 'font-medium');
+                });
+                e.target.classList.add('bg-cyan-500', 'text-white', 'font-bold');
+                e.target.classList.remove('bg-gray-700', 'text-gray-300', 'font-medium');
+            }
+
+            // --- Attach Listeners ---
+            playBtn.addEventListener('click', startAudio);
+            stopBtn.addEventListener('click', stopAudio);
+
+            freqSlider.addEventListener('input', handleFrequencyChange);
+            freqInput.addEventListener('input', handleFrequencyChange);
+            volumeSlider.addEventListener('input', handleVolumeChange);
+
+            waveBtns.forEach(btn => {
+                btn.addEventListener('click', handleWaveChange);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequency Guessing Game</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Custom styles for a nice gradient and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-900 text-gray-200 flex items-center justify-center p-6">
+
+    <div class="w-full max-w-md bg-gray-800 shadow-2xl rounded-2xl p-8 space-y-6">
+        <h1 class="text-3xl font-bold text-center text-white">Frequency Guessing Game</h1>
+        <p class="text-center text-gray-400">Can you guess the frequency between 120 Hz and 12 kHz?</p>
+        
+        <!-- Controls -->
+        <div class="space-y-4">
+            <button id="playNewBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105">
+                Play New Frequency
+            </button>
+            <button id="playAgainBtn" class="w-full bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Play Again
+            </button>
+            <!-- Volume Slider -->
+            <div class="pt-2">
+                <label for="volumeSlider" class="block text-sm font-medium text-gray-300 text-center">Volume</label>
+                <input type="range" id="volumeSlider" min="-40" max="0" value="-10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            </div>
+        </div>
+
+        <!-- Guessing Form -->
+        <div class="space-y-4">
+            <label for="guessInput" class="block text-sm font-medium text-gray-300">Your Guess (Hz):</label>
+            <input type="number" id="guessInput" placeholder="e.g., 440" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50" disabled>
+            
+            <button id="submitGuessBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                Submit Guess
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsContainer" class="pt-4 space-y-3 hidden">
+            <h2 class="text-xl font-semibold text-center text-white">Results</h2>
+            <div class="bg-gray-700 p-4 rounded-lg space-y-2 text-center">
+                <p class="text-lg">Actual Frequency: <span id="actualFreq" class="font-bold text-blue-400"></span></p>
+                <p class="text-lg">Your Guess: <span id="userGuess" class="font-bold text-green-400"></span></p>
+                <p class="text-lg">Difference: <span id="difference" class="font-bold text-red-400"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const playNewBtn = document.getElementById('playNewBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const guessInput = document.getElementById('guessInput');
+        const submitGuessBtn = document.getElementById('submitGuessBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const actualFreqEl = document.getElementById('actualFreq');
+        const userGuessEl = document.getElementById('userGuess');
+        const differenceEl = document.getElementById('difference');
+        const volumeSlider = document.getElementById('volumeSlider');
+
+        // Initialize Tone.js Synth
+        const synth = new Tone.Synth().toDestination();
+        synth.volume.value = -10; // Set initial volume
+        
+        let currentFrequency = 0;
+        const minFreq = 120;
+        const maxFreq = 12000;
+
+        // Function to play the current frequency
+        function playFrequency() {
+            // Ensure the audio context is running
+            Tone.context.resume().then(() => {
+                if (currentFrequency > 0) {
+                    synth.triggerAttackRelease(currentFrequency, "1s");
+                }
+            });
+        }
+
+        // Event listener for the "Play New Frequency" button
+        playNewBtn.addEventListener('click', () => {
+            // Generate a new random frequency
+            currentFrequency = Math.floor(Math.random() * (maxFreq - minFreq + 1)) + minFreq;
+            
+            // Play the new frequency
+            playFrequency();
+            
+            // Update UI state
+            playAgainBtn.disabled = false;
+            guessInput.disabled = false;
+            submitGuessBtn.disabled = false;
+            guessInput.value = '';
+            guessInput.focus();
+            resultsContainer.classList.add('hidden');
+        });
+
+        // Event listener for the "Play Again" button
+        playAgainBtn.addEventListener('click', () => {
+            playFrequency();
+        });
+
+        // Event listener for Volume Slider
+        volumeSlider.addEventListener('input', (e) => {
+            synth.volume.value = parseFloat(e.target.value);
+        });
+
+        // Event listener for the "Submit Guess" button
+        submitGuessBtn.addEventListener('click', () => {
+            const userGuess = parseFloat(guessInput.value);
+
+            if (isNaN(userGuess) || userGuess <= 0) {
+                // Show a custom message instead of an alert
+                resultsContainer.classList.remove('hidden');
+                actualFreqEl.textContent = '---';
+                userGuessEl.textContent = '---';
+                differenceEl.textContent = 'Please enter a valid number.';
+                return;
+            }
+
+            const difference = Math.abs(currentFrequency - userGuess);
+
+            // Display results
+            actualFreqEl.textContent = `${currentFrequency.toFixed(0)} Hz`;
+            userGuessEl.textContent = `${userGuess.toFixed(0)} Hz`;
+            differenceEl.textContent = `${difference.toFixed(0)} Hz`;
+            resultsContainer.classList.remove('hidden');
+
+            // Disable guess controls until a new game starts
+            // We still allow 'Play Again' to hear the sound
+            guessInput.disabled = true;
+            submitGuessBtn.disabled = true;
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chakra Frequency Player</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Tone.js for audio generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the active button */
+        .btn-active {
+            transform: scale(1.05); /* Enlarge active button */
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.3); /* Add a glow */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-gray-900 to-indigo-900 text-white min-h-screen">
+
+    <!-- Overlay to start AudioContext on user interaction -->
+    <!-- [REMOVED]
+    <div id="overlay" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50 cursor-pointer">
+        ...
+    </div>
+    -->
+
+    <!-- Main content, hidden until overlay is clicked -->
+    <div id="main-content" class="min-h-screen flex flex-col items-center justify-center p-6 md:p-12 transition-opacity duration-500">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+                Chakra Frequency Player
+            </h1>
+            <p class="text-lg md:text-xl text-indigo-200 mt-3">
+                Select a chakra to play its corresponding solfeggio frequency.
+            </p>
+        </header>
+
+        <!-- Button container -->
+        <main class="w-full max-w-md space-y-4">
+            
+            <!-- Crown Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Crown"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-violet-600 hover:bg-violet-500 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Crown Chakra - 963 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Crown"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-violet-600">
+            </div>
+
+            <!-- Third Eye Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Third Eye"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-indigo-600 hover:bg-indigo-500 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Third Eye Chakra - 852 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Third Eye"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+            </div>
+
+            <!-- Throat Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Throat"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-blue-600 hover:bg-blue-500 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Throat Chakra - 741 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Throat"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600">
+            </div>
+
+            <!-- Heart Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Heart"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-green-600 hover:bg-green-500 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Heart Chakra - 639 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Heart"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-600">
+            </div>
+
+            <!-- Solar Plexus Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Solar Plexus"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-yellow-500 hover:bg-yellow-400 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Solar Plexus Chakra - 528 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Solar Plexus"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500">
+            </div>
+
+            <!-- Sacral Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Sacral"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-orange-600 hover:bg-orange-500 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Sacral Chakra - 417 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Sacral"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-600">
+            </div>
+
+            <!-- Root Chakra -->
+            <div class="space-y-2">
+                <button 
+                    data-chakra="Root"
+                    class="chakra-btn w-full text-lg font-semibold p-4 rounded-lg shadow-lg bg-red-600 hover:bg-red-500 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
+                    Root Chakra - 396 Hz
+                </button>
+                <input 
+                    type="range" 
+                    min="-40" 
+                    max="0" 
+                    value="0" 
+                    step="1" 
+                    data-chakra="Root"
+                    class="volume-slider w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-red-600">
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // const overlay = document.getElementById('overlay'); // [REMOVED]
+            const mainContent = document.getElementById('main-content');
+            const buttons = document.querySelectorAll('.chakra-btn');
+            const sliders = document.querySelectorAll('.volume-slider'); // <-- Get all sliders
+
+            // --- Chakra Data (Frequency and Colors) ---
+            const chakraInfo = {
+                "Crown": { freq: 963, base: "bg-violet-600", hover: "hover:bg-violet-500" },
+                "Third Eye": { freq: 852, base: "bg-indigo-600", hover: "hover:bg-indigo-500" },
+                "Throat": { freq: 741, base: "bg-blue-600", hover: "hover:bg-blue-500" },
+                "Heart": { freq: 639, base: "bg-green-600", hover: "hover:bg-green-500" },
+                "Solar Plexus": { freq: 528, base: "bg-yellow-500", hover: "hover:bg-yellow-400" },
+                "Sacral": { freq: 417, base: "bg-orange-600", hover: "hover:bg-orange-500" },
+                "Root": { freq: 396, base: "bg-red-600", hover: "hover:bg-red-500" }
+            };
+
+            /* [REMOVED]
+            let activeOscillator = null;
+            let activeChakra = null;
+            */
+            let activeOscillators = {}; // <-- New: Store multiple oscillators
+            let isAudioStarted = false; // <-- Flag to check if audio is initialized
+            // [REMOVED] let originalButtonText = "";
+
+            // Store original text on each button's dataset for individual tracking
+            buttons.forEach(button => {
+                button.dataset.originalText = button.textContent;
+            });
+
+            // --- 1. Handle AudioContext Start --- [REMOVED]
+            /*
+            overlay.addEventListener('click', async () => {
+                await Tone.start();
+                console.log('AudioContext started');
+                // Fade out overlay
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                // Fade in main content
+                mainContent.classList.remove('hidden');
+                mainContent.classList.add('opacity-100');
+            }, { once: true }); // Ensure this only runs once
+            */
+
+            // --- 2. Handle Button Clicks ---
+            buttons.forEach(button => {
+                button.addEventListener('click', async () => { // <-- Make async
+                    
+                    // Start audio context on the very first button press
+                    if (!isAudioStarted) {
+                        await Tone.start();
+                        console.log('AudioContext started');
+                        isAudioStarted = true;
+                    }
+
+                    const chakraName = button.dataset.chakra;
+                    const info = chakraInfo[chakraName];
+                    const originalText = button.dataset.originalText; // Get original text
+
+                    // Case 1: Clicking a button that is *currently playing* to stop it
+                    if (activeOscillators[chakraName]) {
+                        activeOscillators[chakraName].stop();
+                        activeOscillators[chakraName].dispose();
+                        delete activeOscillators[chakraName]; // Remove from active list
+
+                        // Reset button style
+                        button.classList.remove('btn-active');
+                        // Restore original text
+                        button.textContent = originalText;
+
+                    } 
+                    // Case 2: Clicking a button that is *not playing* to start it
+                    else {
+                        // [REMOVED] Stop any *other* playing tone logic
+
+                        // Find the corresponding slider to get the initial volume
+                        const slider = document.querySelector(`.volume-slider[data-chakra="${chakraName}"]`);
+                        const initialVolume = slider.value;
+
+                        // Create and start the new tone
+                        const newOscillator = new Tone.Oscillator(info.freq, "sine").toDestination();
+                        newOscillator.volume.value = initialVolume; // Set initial volume
+                        newOscillator.start();
+                        
+                        activeOscillators[chakraName] = newOscillator; // Add to active list
+
+                        // Set *new* button's active style
+                        button.classList.add('btn-active');
+                        // Update text to include "Stop"
+                        button.textContent = `Stop ${originalText.trim()}`;
+                    }
+                });
+            });
+
+            // --- 3. Handle Slider Volume Changes ---
+            sliders.forEach(slider => {
+                slider.addEventListener('input', () => {
+                    const chakraName = slider.dataset.chakra;
+                    const volume = slider.value; // Get volume in dB (-40 to 0)
+
+                    // Check if the oscillator for this chakra is currently playing
+                    if (activeOscillators[chakraName]) {
+                        // If yes, update its volume in real-time
+                        activeOscillators[chakraName].volume.value = volume;
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
